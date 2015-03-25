@@ -1,0 +1,20 @@
+{
+    "appKeys": {},
+    "capabilities": [
+        ""
+    ],
+    "companyName": "sakisakira@gmail.com",
+    "longName": "QuarterAnalogue",
+    "projectType": "native",
+    "resources": {
+        "media": []
+    },
+    "sdkVersion": "2",
+    "shortName": "QuarterAnalogue",
+    "uuid": "5aa346d1-6c2e-41a4-8a3b-e9033e2c2db6",
+    "versionCode": 1,
+    "versionLabel": "1.0",
+    "watchapp": {
+        "watchface": true
+    }
+}
