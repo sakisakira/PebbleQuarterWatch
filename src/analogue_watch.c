@@ -1,8 +1,6 @@
 #include <pebble.h>
-#include <math.h>
+//#include <math.h>
 #include <time.h>
-
-static const float PI = 3.14159265359f;
 
 static Window *s_main_window;
 static Layer *s_main_layer;
@@ -12,10 +10,13 @@ static GPoint s_hand_shift;
 typedef struct {
   int hour, minute, second;
 } WatchTime;
-static WatchTime s_current_time;
+static WatchTime s_current_time = {
+  .hour = -2, .minute = -2, .second = -2
+};
 
-#define HandLength 120
-static const int ScreenWidth = 144;
+static const int DivisionLength = 120;
+#define HandLength 114
+
 static GPath *s_hand_path_ptr, *s_second_path_ptr;
 static const GPathInfo HandPathInfo = {
   .num_points = 4,
@@ -33,30 +34,35 @@ static void prepare_drawing_hand_division(Layer * const layer, GContext * const 
   const int hour24, const int minute);
 static void draw_hand_outline(Layer * const layer, GContext * const ctx);
 static void draw_hand_filled(Layer * const layer, GContext * const ctx, const int second);
-static void draw_division(Layer * const layer, GContext * const ctx, const int minute, const bool filled);
+static void draw_division(Layer * const layer, GContext * const ctx, 
+        const int minute, const bool filled);
 static void draw_divisions(Layer * const layer, GContext * const ctx,
-			   const int hour24, const int minute);
+			  const int hour24, const int minute);
 static void tick_handler(struct tm *tick_time, TimeUnits units_changed);
-
 
 // drawing
 
 static void prepare_drawing_hand_division(Layer * const layer, GContext * const ctx, 
   const int hour24, const int minute) {
+  const GRect rect = layer_get_bounds(layer);
+
   s_hand_angle = minute * TRIG_MAX_ANGLE / 60;
 
   const int am_flag = (hour24 < 12) ? -1 : 1;
   const int hour12 = hour24 % 12;
-  const float mh = minute + am_flag * hour12 / 2.0f;
-  const float angle = 2 * PI * mh / 60;
-  int x =  - (int)(HandLength * 4 / 5 * sin(angle)) + ScreenWidth / 2;
-  int y =    (int)(HandLength * 4 / 5 * cos(angle)) + ScreenWidth / 2;
+  const int mh2 = minute * 2 + am_flag * hour12;
+  const int mh2_angle = mh2 * TRIG_MAX_ANGLE / 2 / 60;
+  int x =  - (int)(DivisionLength * 3 / 4 * sin_lookup(mh2_angle) / TRIG_MAX_RATIO) 
+      + rect.size.w / 2;
+  int y =    (int)(DivisionLength * 3 / 4 * cos_lookup(mh2_angle) / TRIG_MAX_RATIO) 
+      + rect.size.h / 2;
 //  APP_LOG(APP_LOG_LEVEL_INFO, "minute=%d angle=%d x=%d y=%d", minute, (int)(angle * 100), x, y);
-  static const int margin = ScreenWidth - HandLength;
-  if (x < margin) x = margin;
-  if (y < margin) y = margin;
-  if (x >= ScreenWidth - margin) x = ScreenWidth - margin + 1;
-  if (y >= ScreenWidth - margin) y = ScreenWidth - margin + 1;
+//  const int margin = (rect.size.w - DivisionLength) / 2;
+  const int margin = -2;
+  if (x < -margin) x = -margin;
+  if (y < -margin) y = -margin;
+  if (x >= rect.size.w + margin) x = rect.size.w + margin - 1;
+  if (y >= rect.size.h + margin) y = rect.size.h + margin - 1;
   s_hand_shift = GPoint(x, y);
   
   graphics_context_set_fill_color(ctx, GColorWhite);
@@ -73,9 +79,9 @@ static void draw_hand_outline(Layer * const layer, GContext * const ctx) {
 static void draw_division(Layer * const layer, GContext * const ctx, 
   const int minute, const bool filled) {
   graphics_context_set_stroke_color(ctx, GColorBlack);
-  const float angle_ = minute * 2 * PI / 60;
-  const int x = (int)(  HandLength * sin(angle_)) + s_hand_shift.x;
-  const int y = (int)(- HandLength * cos(angle_)) + s_hand_shift.y;
+  const int angle = minute * TRIG_MAX_ANGLE / 60;
+  const int x = (int)(  DivisionLength * sin_lookup(angle) / TRIG_MAX_RATIO) + s_hand_shift.x;
+  const int y = (int)(- DivisionLength * cos_lookup(angle) / TRIG_MAX_RATIO) + s_hand_shift.y;
   const int radius = (minute % 5 == 0) ? 5 : 2;
   if (filled)
     graphics_fill_circle(ctx, GPoint(x, y), radius);
@@ -98,20 +104,20 @@ static void draw_divisions(Layer * const layer, GContext * const ctx,
   const int hour12 = hour24 % 12;
   const bool is_am = hour24 < 12;
   if (is_am) {
-    for (int i = minute - 12; i < minute - hour12; ++ i)
+    for (int i = minute - 12; i < minute - hour12 + 1; ++ i)
       draw_division(layer, ctx, (i + 60) % 60, false);
-    for (int i = minute - hour12; i < minute; ++ i) 
+    for (int i = minute - hour12 + 1; i < minute; ++ i) 
       draw_division(layer, ctx, (i + 60) % 60, true);
-    draw_division(layer, ctx, minute, true);
+    draw_division(layer, ctx, minute, hour12 > 0);
     for (int i = minute + 1; i <= minute + 12; ++ i)
       draw_division(layer, ctx, i % 60, false);
   } else {
     for (int i = minute - 12; i < minute; ++ i)
       draw_division(layer, ctx, i >= 0 ? i : i + 60, false);
-    draw_division(layer, ctx, minute, true);
-    for (int i = minute + 1; i <= minute + hour12; ++ i)
-      draw_division(layer, ctx, i % 60,true);
-    for (int i = minute + hour12 + 1; i <= minute + 12; ++ i)
+    draw_division(layer, ctx, minute, hour12 > 0);
+    for (int i = minute + 1; i <= minute + hour12 - 1; ++ i)
+      draw_division(layer, ctx, i % 60, true);
+    for (int i = minute + hour12; i <= minute + 12; ++ i)
       draw_division(layer, ctx, i % 60, false);
  }
 }
@@ -120,7 +126,8 @@ static void update_main_layer(Layer *layer, GContext *ctx) {
   static WatchTime last_time = {
     .hour = -1, .minute = -1, .second = -1
   };
-//  APP_LOG(APP_LOG_LEVEL_INFO, "update_main_layer()");
+  if (s_current_time.hour < 0) return;
+  //APP_LOG(APP_LOG_LEVEL_INFO, "update_main_layer()");
 
   if ((last_time.minute != s_current_time.minute) ||
       (last_time.hour != s_current_time.hour)) {
@@ -141,20 +148,25 @@ static void create_rect_pathes(void) {
 }
 
 static void destroy_rect_pathes(void) {
-  gpath_destroy(s_hand_path_ptr);  
-  gpath_destroy(s_second_path_ptr);  
+  if (s_hand_path_ptr)
+    gpath_destroy(s_hand_path_ptr);  
+  if (s_second_path_ptr)
+    gpath_destroy(s_second_path_ptr);  
 }
 
 static void main_window_load(Window *window) {
-//  APP_LOG(APP_LOG_LEVEL_INFO, "main_window_load()");
-  s_main_layer = window_get_root_layer(s_main_window);
-  layer_set_update_proc(s_main_layer, update_main_layer);
+  s_main_layer =  window_get_root_layer(window);
+  if (s_main_layer)
+    layer_set_update_proc(s_main_layer, update_main_layer);
 }
 static void main_window_unload(Window *window) {}
 
 // event handler
 
 static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
+//  time_t temp = time(NULL); 
+//  struct tm *tick_time = localtime(&temp);
+
   s_current_time.hour = tick_time->tm_hour;
   s_current_time.minute = tick_time->tm_min;
   s_current_time.second = tick_time->tm_sec;
@@ -166,6 +178,7 @@ static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
 static void init(void) {
   create_rect_pathes();
   s_main_window = window_create();
+  if (!s_main_window) return;
   window_set_window_handlers(s_main_window, (WindowHandlers) {
     .load = main_window_load,
     .unload = main_window_unload,
@@ -176,12 +189,12 @@ static void init(void) {
 
 static void deinit(void) {
   destroy_rect_pathes();
-  window_destroy(s_main_window);
+  if (s_main_window)
+    window_destroy(s_main_window);
 }
 
 int main(void) {
   init();
   app_event_loop();
   deinit();
-  return 0;
 }
