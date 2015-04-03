@@ -1,6 +1,11 @@
 #include <pebble.h>
-//#include <math.h>
 #include <time.h>
+
+#define Key_BackgroundColor 0
+#define Key_Interval 1
+#define Key_HourDigit 2
+static int s_backgroundColor_white = 1, 
+  s_interval_second = 1, s_hourDigit_show = 1;
 
 static Window *s_main_window;
 static Layer *s_main_layer;
@@ -39,6 +44,7 @@ static void draw_division(Layer * const layer, GContext * const ctx,
 static void draw_divisions(Layer * const layer, GContext * const ctx,
 			  const int hour24, const int minute);
 static void tick_handler(struct tm *tick_time, TimeUnits units_changed);
+static void read_persist_values(void);
 
 // drawing
 
@@ -164,13 +170,53 @@ static void main_window_unload(Window *window) {}
 // event handler
 
 static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
-//  time_t temp = time(NULL); 
-//  struct tm *tick_time = localtime(&temp);
-
   s_current_time.hour = tick_time->tm_hour;
   s_current_time.minute = tick_time->tm_min;
   s_current_time.second = tick_time->tm_sec;
   layer_mark_dirty(s_main_layer);
+}
+
+// settings
+
+static void inbox_received_callback(DictionaryIterator *iterator, void *context) {
+  Tuple *t = dict_read_first(iterator);
+  while (t != NULL) {
+    switch (t->key) {
+    case Key_BackgroundColor:
+      APP_LOG(APP_LOG_LEVEL_INFO, "bgcolor_white %d", (int)t->value->int32);
+      persist_write_int(Key_BackgroundColor, (int)t->value->int32);
+      break;
+    case Key_Interval:
+      APP_LOG(APP_LOG_LEVEL_INFO, "interval_second %d", (int)t->value->int32);
+      persist_write_int(Key_Interval, (int)t->value->int32);
+      break;
+    case Key_HourDigit:
+      APP_LOG(APP_LOG_LEVEL_INFO, "hour_digit_show %d", (int)t->value->int32);
+      persist_write_int(Key_HourDigit, (int)t->value->int32);
+      break;
+      default:
+      APP_LOG(APP_LOG_LEVEL_ERROR, "Key %d not recognized!!", (int)t->key);
+      break;
+    }
+    t = dict_read_next(iterator);
+  }
+  read_persist_values();
+}
+
+static void inbox_dropped_callback(AppMessageResult reason, void *context) {
+  APP_LOG(APP_LOG_LEVEL_ERROR, "Message dropped!");
+}
+static void outbox_failed_callback(DictionaryIterator *iterator, AppMessageResult reason, void *context) {
+  APP_LOG(APP_LOG_LEVEL_ERROR, "Outbox send failed!");
+}
+static void outbox_sent_callback(DictionaryIterator *iterator, void *context) {
+  APP_LOG(APP_LOG_LEVEL_INFO, "Outbox send success!");
+}
+
+static void read_persist_values(void) {
+  s_backgroundColor_white = persist_read_int(Key_BackgroundColor);
+  s_interval_second = persist_read_int(Key_Interval);
+  s_hourDigit_show = persist_read_int(Key_HourDigit);
 }
 
 // main
@@ -185,6 +231,14 @@ static void init(void) {
   });
   window_stack_push(s_main_window, true);
   tick_timer_service_subscribe(SECOND_UNIT, tick_handler);
+
+  read_persist_values();
+
+  app_message_register_inbox_received(inbox_received_callback);
+  app_message_register_inbox_dropped(inbox_dropped_callback);
+  app_message_register_outbox_failed(outbox_failed_callback);
+  app_message_register_outbox_sent(outbox_sent_callback);
+  app_message_open(app_message_inbox_size_maximum(), app_message_outbox_size_maximum());
 }
 
 static void deinit(void) {
