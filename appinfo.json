@@ -24,7 +24,7 @@
     "shortName": "QAnalogue",
     "uuid": "5aa346d1-6c2e-41a4-8a3b-e9033e2c2db6",
     "versionCode": 1,
-    "versionLabel": "1.1",
+    "versionLabel": "1.2",
     "watchapp": {
         "watchface": true
     }

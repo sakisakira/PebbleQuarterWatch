@@ -26,15 +26,19 @@ static const int DivisionLength = 120;
 
 static GPath *s_hand_path_ptr, *s_second_path_ptr;
 static const GPathInfo HandPathInfo = {
-  .num_points = 4,
-  .points = (GPoint []) {{-4, -HandLength}, {4, -HandLength},
-    {4, 0}, {-4, 0}}
+  .num_points = 10,
+  .points = (GPoint []) 
+  {{-4, -HandLength}, {-3, -HandLength-3}, 
+  {0,-HandLength-4}, {3, -HandLength-3}, {4, -HandLength},
+  {4, 0}, {3, 3}, {0, 4}, {-3, 3}, {-4, 0}}
 };
 
 static const GPathInfo SecondPathInfo = {
-  .num_points = 4,
-  .points = (GPoint []) {{-5, -HandLength}, {5, -HandLength},
-    {5, 0}, {-5, 0}}
+  .num_points = 10,
+  .points = (GPoint []) 
+  {{-5, -HandLength}, {-4, -HandLength-4}, 
+  {0,-HandLength-5}, {4, -HandLength-4}, {5, -HandLength},
+  {5, 0}, {4, 4}, {0, 5}, {-4, 4}, {-5, 0}}
 };
 
 static void prepare_drawing_hand_division(Layer * const layer, GContext * const ctx,
@@ -100,12 +104,18 @@ static void draw_division(Layer * const layer, GContext * const ctx,
 
 static void draw_hand_filled(Layer * const layer, GContext * const ctx, const int second) {
   const int len = second * HandLength / (60 - 1);
-  s_second_path_ptr->points[0].y = -len;
-  s_second_path_ptr->points[1].y = -len;
+  const int pt_num = s_second_path_ptr->num_points / 2;
+
+  for (int i = 0; i < pt_num; i ++)
+    s_second_path_ptr->points[i].y = -len;
+
   graphics_context_set_fill_color(ctx, s_foreground_color);
   gpath_rotate_to(s_second_path_ptr, s_hand_angle);
   gpath_move_to(s_second_path_ptr, s_hand_shift);
   gpath_draw_filled(ctx, s_second_path_ptr);
+
+  for (int i = 0; i < pt_num; i ++)
+    s_second_path_ptr->points[i].y = +len;
 }
 
 static void draw_hour_digit(Layer * const Layer, GContext * const ctx,
@@ -113,7 +123,7 @@ static void draw_hour_digit(Layer * const Layer, GContext * const ctx,
   const int digit_dist = DivisionLength * 3 / 4;
   const int radius = 10;
   const int angle = minute * TRIG_MAX_ANGLE / 60;
-  static char digit_str[2];
+  static char digit_str[] = "99";
   // circle
   const int cx = (int)(  digit_dist * sin_lookup(angle) / TRIG_MAX_RATIO) + s_hand_shift.x;
   const int cy = (int)(- digit_dist * cos_lookup(angle) / TRIG_MAX_RATIO) + s_hand_shift.y;
@@ -122,7 +132,7 @@ static void draw_hour_digit(Layer * const Layer, GContext * const ctx,
   graphics_context_set_stroke_color(ctx, s_foreground_color);
   graphics_draw_circle(ctx, GPoint(cx, cy), radius);
   // digit
-  snprintf(digit_str, 2, "%d", hour24 % 12);
+  snprintf(digit_str, sizeof(digit_str), "%2u", hour24);
   graphics_context_set_text_color(ctx, s_foreground_color);
   graphics_draw_text(ctx, digit_str, fonts_get_system_font(FONT_KEY_GOTHIC_14),
     GRect(cx - radius * 2, cy - radius, radius * 4, radius * 2),
