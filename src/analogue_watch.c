@@ -121,7 +121,7 @@ static void draw_hand_filled(Layer * const layer, GContext * const ctx, const in
 static void draw_hour_digit(Layer * const Layer, GContext * const ctx,
         const int hour24, const int minute) {
   const int digit_dist = DivisionLength * 3 / 4;
-  const int radius = 10;
+  const int radius = 18;
   const int angle = minute * TRIG_MAX_ANGLE / 60;
   static char digit_str[] = "99";
   // circle
@@ -134,7 +134,8 @@ static void draw_hour_digit(Layer * const Layer, GContext * const ctx,
   // digit
   snprintf(digit_str, sizeof(digit_str), "%2u", hour24);
   graphics_context_set_text_color(ctx, s_foreground_color);
-  graphics_draw_text(ctx, digit_str, fonts_get_system_font(FONT_KEY_GOTHIC_14),
+  graphics_draw_text(ctx, digit_str, 
+    fonts_get_system_font(FONT_KEY_GOTHIC_28),
     GRect(cx - radius * 2, cy - radius, radius * 4, radius * 2),
     GTextOverflowModeFill, GTextAlignmentCenter, NULL);
 }
@@ -144,20 +145,20 @@ static void draw_divisions(Layer * const layer, GContext * const ctx,
   const int hour12 = hour24 % 12;
   const bool is_am = hour24 < 12;
   if (is_am) {
-    for (int i = minute - 12; i < minute - hour12 + 1; ++ i)
+    for (int i = minute - 14; i < minute - hour12 + 1; ++ i)
       draw_division(layer, ctx, (i + 60) % 60, false);
     for (int i = minute - hour12 + 1; i < minute; ++ i)
       draw_division(layer, ctx, (i + 60) % 60, true);
     draw_division(layer, ctx, minute, hour12 > 0);
-    for (int i = minute + 1; i <= minute + 12; ++ i)
+    for (int i = minute + 1; i <= minute + 14; ++ i)
       draw_division(layer, ctx, i % 60, false);
   } else {
-    for (int i = minute - 12; i < minute; ++ i)
+    for (int i = minute - 14; i < minute; ++ i)
       draw_division(layer, ctx, i >= 0 ? i : i + 60, false);
     draw_division(layer, ctx, minute, hour12 > 0);
     for (int i = minute + 1; i <= minute + hour12 - 1; ++ i)
       draw_division(layer, ctx, i % 60, true);
-    for (int i = minute + hour12; i <= minute + 12; ++ i)
+    for (int i = minute + hour12; i <= minute + 14; ++ i)
       draw_division(layer, ctx, i % 60, false);
  }
 }
@@ -216,6 +217,12 @@ static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
   s_current_time.minute = tick_time->tm_min;
   s_current_time.second = tick_time->tm_sec;
   layer_mark_dirty(s_main_layer);
+}
+
+static void update_now(void) {
+  time_t t = time(NULL);
+  struct tm *lt = localtime(&t);
+  tick_handler(lt, false);
 }
 
 // settings
@@ -288,6 +295,7 @@ static void init(void) {
   window_stack_push(s_main_window, true);
 
   read_persist_values();
+  update_now();
 
   app_message_register_inbox_received(inbox_received_callback);
   app_message_register_inbox_dropped(inbox_dropped_callback);
