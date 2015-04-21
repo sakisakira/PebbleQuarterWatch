@@ -22,7 +22,7 @@ static WatchTime s_current_time = {
 static bool s_force_update;
 
 static const int DivisionLength = 120;
-#define HandLength 114
+#define HandLength 110
 
 static GPath *s_hand_path_ptr, *s_second_path_ptr;
 static const GPathInfo HandPathInfo = {
@@ -120,7 +120,7 @@ static void draw_hand_filled(Layer * const layer, GContext * const ctx, const in
 
 static void draw_hour_digit(Layer * const Layer, GContext * const ctx,
         const int hour24, const int minute) {
-  const int digit_dist = DivisionLength * 3 / 4;
+  const int digit_dist = DivisionLength * 1 / 2;
   const int radius = 18;
   const int angle = minute * TRIG_MAX_ANGLE / 60;
   static char digit_str[] = "99";
