@@ -29,15 +29,13 @@
 </div>
 
 <div class='item-container'>
-  <div class='item-container-header'>Update Interval</div>
   <div class='item-container-content'>
     <label class='item'>
-      Second
-      <input id='interval' type='radio' class='item-radio' value='second' checked>
-    </label>
-    <label class='item'>
-      Minute
-      <input id='interval' type='radio' class='item-radio' value='minute'>
+      Update Interval
+      <select id='interval' calss='item-select'>
+        <option value="second" selected>Second</option>
+        <option value="minute">Minute</option>
+      </select>
     </label>
   </div>
 </div>
@@ -45,12 +43,11 @@
   <div class='item-container-header'>Hour in Digit</div>
   <div class='item-container-content'>
     <label class='item'>
-      Show
-      <input id='hour_digit' type='radio' class='item-radio' value='show' checked>
-    </label>
-    <label class='item'>
-      Hide
-      <input id='hour_digit' type='radio' class='item-radio' value='hide'>
+      Hour in Digit
+      <select id='hour_digit' class='item-select'>
+        <option value="show" selected>Show</option>
+        <option value="hide">Hide</option>
+      </select>
     </label>
   </div>
 </div>
