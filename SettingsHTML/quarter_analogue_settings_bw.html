@@ -37,8 +37,8 @@ function jump() {
 <form name="settings_form">
 <hr>
 Background Color:
-<input type="radio" name="bg_color" value="11111111" checked>White
-<input type="radio" name="bg_color" value="11000000">Black
+<input type="radio" name="bg_color" value="0xffffff" checked>White
+<input type="radio" name="bg_color" value="0x000000">Black
 <p>
 Update Interval:
 <input type="radio" name="interval" value="second" checked>Second
@@ -46,7 +46,7 @@ Update Interval:
 <p>
 Hour in Digit:
 <input type="radio" name="hour_digit" value="show" checked>Show
-<input type="radio" name="hour_digit" value="hidden">Hidden
+<input type="radio" name="hour_digit" value="hide">Hidden
 <hr>
 <input type="button" name="submit" value="submit" onclick="jump()">
 </form>
