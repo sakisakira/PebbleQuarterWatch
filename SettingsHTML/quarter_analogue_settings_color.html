@@ -4,22 +4,6 @@
   <link rel="stylesheet" href="https://rawgit.com/pebble/slate/master/dist/css/slate.min.css" />
 </head>
 <body>
-<script type="text/javascript"><!--
-function jump() {
-  var form = document.forms["settings_form"];
-  var datas = {};
-  datas["bg_color"] = form.elements["bg_color"].value;
-  datas["interval"] = form.elements["interval"].value;
-  datas["hour_digit"] = form.elements["hour_digit"].value;
-  datas["hand_color"] = form.elements["hand_color"].value;
-  datas["hour_color"] = form.elements["hour_color"].value;
-  datas["division_color"] = form.elements["division_color"].value;
-
-  var return_to = getQueryParam('return_to', 'pebblejs://close#');
-  location.href = return_to + encodeURIComponent(JSON.stringify(datas));
-  //location.href = return_to + JSON.stringify(datas);
-}
-// --></script>
 <h1 class='title'>Quarter Analogue Setting</h1>
 
 <div class='item-container'>
